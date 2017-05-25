@@ -1,0 +1,8 @@
+[Oo]bj/
+[Bb]in/
+*.suo
+*.csproj.user
+PublishProfiles/
+App_Data/
+thumbs.db
+.vs
