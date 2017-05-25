@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -17,8 +18,11 @@ namespace WebApplication8NETFX47
 {
     public class Startup
     {
+        readonly IHostingEnvironment HostingEnvironment;
+
         public Startup(IHostingEnvironment env)
         {
+            HostingEnvironment = env;
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -41,7 +45,22 @@ namespace WebApplication8NETFX47
         {
             // Add framework services.
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+            {
+                if (Configuration.GetSection("Data")["useSqlCE"] != "true")
+                {
+                    // LocalDB DSN
+                    options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+                }
+                else
+                {
+                    // <Content Include="App_Data\**\*" CopyToPublishDirectory="PreserveNewest" />
+                    var appDataPath = Path.Combine(HostingEnvironment.ContentRootPath, "App_Data/");
+                    var connStr = Configuration.GetSection("Data")["DefaultConnection"].Replace(
+                        "|App_Data|", appDataPath);
+                    options.UseSqlCe(connStr);
+                }
+
+            });
 
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
